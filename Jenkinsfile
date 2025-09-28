@@ -128,9 +128,14 @@ pipeline {
         withCredentials([file(credentialsId: "${KUBECONFIG_CREDENTIAL}", variable: 'KCFG')]) {
           script {
             echo "Performing health checks on staging..."
+
+            sh 'chmod +x scripts/health-check.sh'
+
             sh '''
               # Verificar que todos los pods están corriendo
               kubectl --kubeconfig="$KCFG" get pods -n ${K8S_NAMESPACE_STAGING}
+
+
               
               # Health checks básicos
               if [ -f "./scripts/health-check.sh" ]; then
