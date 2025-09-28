@@ -2,7 +2,7 @@ services:
   jenkins:
     build:
       context: .
-      dockerfile: infra/jenkins.Dockerfile
+      dockerfile: jenkins.Dockerfile
     image: jenkins-with-dockercli:latest
     container_name: jenkins
     user: root

@@ -12,5 +12,6 @@ spec:
   ports:
   - port: 8081
     targetPort: 8081
+    nodePort: 30081
     protocol: TCP
   type: ClusterIP

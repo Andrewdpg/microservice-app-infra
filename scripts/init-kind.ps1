@@ -8,6 +8,8 @@ if (-not $exists) {
 }
 kubectl cluster-info
 
+docker network connect kind jenkins
+
 Write-Host "Aplicando namespaces + RBAC..."
 kubectl apply -f k8s/base/namespaces.yaml
 kubectl apply -f k8s/rbac-jenkins.yaml
