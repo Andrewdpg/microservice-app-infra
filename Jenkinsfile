@@ -40,20 +40,17 @@ pipeline {
     stage('Validate Manifests') {
       steps {
         unstash 'infra-ws'
-        withCredentials([file(credentialsId: "${KUBECONFIG_CREDENTIAL}", variable: 'KCFG')]) {
-          script {
-            echo "Validating Kubernetes manifests..."
-            // Validar sintaxis de manifiestos (solo si kubectl está disponible)
-            sh '''
-              export KUBECONFIG="$KCFG"
-
-              if command -v kubectl >/dev/null 2>&1; then
-                find k8s/ -name "*.yaml" -exec kubectl --dry-run=client apply -f {} \\;
-              else
-                echo "kubectl not available, skipping validation"
-              fi
-            '''
-          }
+        script {
+          echo "Validating Kubernetes manifests..."
+          
+          // Validar sintaxis de manifiestos (solo si kubectl está disponible)
+          sh '''
+            if command -v kubectl >/dev/null 2>&1; then
+              find k8s/ -name "*.yaml" -exec kubectl --dry-run=client apply -f {} \\;
+            else
+              echo "kubectl not available, skipping validation"
+            fi
+          '''
         }
       }
     }
@@ -80,12 +77,13 @@ pipeline {
             
             # Renderizar SOLO manifiestos del entorno específico
             if [ -d "k8s/${ENVIRONMENT}" ]; then
-              find k8s/${ENVIRONMENT} -type f -name "*.yaml" -print | while read -r f; do
+              find k8s/${ENVIRONMENT} -type f -name "*.yaml" \
+                -print | while read -r f; do
                 out="k8s/_render/${f#k8s/${ENVIRONMENT}/}"
                 mkdir -p "$(dirname "$out")"
-                sed -e "s|\\\${REGISTRY}|${REGISTRY}|g" \\
-                    -e "s|\\\${IMAGE_TAG}|${IMAGE_TAG}|g" \\
-                    -e "s|\\\${NAMESPACE}|${NAMESPACE}|g" \\
+                sed -e "s|\\${REGISTRY}|${REGISTRY}|g" \
+                    -e "s|\\${IMAGE_TAG}|${IMAGE_TAG}|g" \
+                    -e "s|\\${NAMESPACE}|${NAMESPACE}|g" \
                     "$f" > "$out"
               done
             fi
@@ -201,12 +199,13 @@ pipeline {
               cp k8s/base/*.yaml k8s/_render-prod/
               
               # Renderizar para producción
-              find k8s/production -type f -name "*.yaml" -print | while read -r f; do
+              find k8s/production -type f -name "*.yaml" \
+                -print | while read -r f; do
                 out="k8s/_render-prod/${f#k8s/production/}"
                 mkdir -p "$(dirname "$out")"
-                sed -e "s|\\\${REGISTRY}|${REGISTRY}|g" \\
-                    -e "s|\\\${IMAGE_TAG}|${IMAGE_TAG}|g" \\
-                    -e "s|\\\${NAMESPACE}|${NAMESPACE}|g" \\
+                sed -e "s|\\${REGISTRY}|${REGISTRY}|g" \
+                    -e "s|\\${IMAGE_TAG}|${IMAGE_TAG}|g" \
+                    -e "s|\\${NAMESPACE}|${NAMESPACE}|g" \
                     "$f" > "$out"
               done
               
