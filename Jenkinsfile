@@ -40,17 +40,19 @@ pipeline {
     stage('Validate Manifests') {
       steps {
         unstash 'infra-ws'
-        script {
-          echo "Validating Kubernetes manifests..."
+        withCredentials([file(credentialsId: "${KUBECONFIG_CREDENTIAL}", variable: 'KCFG')]) {
+          script {
+            echo "Validating Kubernetes manifests..."
           
-          // Validar sintaxis de manifiestos (solo si kubectl está disponible)
-          sh '''
-            if command -v kubectl >/dev/null 2>&1; then
-              find k8s/ -name "*.yaml" -exec kubectl --dry-run=client apply -f {} \\;
-            else
-              echo "kubectl not available, skipping validation"
-            fi
-          '''
+            // Validar sintaxis de manifiestos (solo si kubectl está disponible)
+            sh '''
+              if command -v kubectl >/dev/null 2>&1; then
+                find k8s/ -name "*.yaml" -exec kubectl --dry-run=client apply -f {} \\;
+              else
+                echo "kubectl not available, skipping validation"
+              fi
+            '''
+          }
         }
       }
     }
@@ -74,6 +76,17 @@ pipeline {
             
             # Copiar y renderizar manifiestos base
             cp k8s/base/*.yaml k8s/_render/
+
+            # Renderizar manifiestos base con variables expandidas
+            find k8s/base -type f -name "*.yaml" \
+              -print | while read -r f; do
+              out="k8s/_render/${f#k8s/base/}"
+              mkdir -p "$(dirname "$out")"
+              sed -e "s|\\${REGISTRY}|${REGISTRY}|g" \
+                  -e "s|\\${IMAGE_TAG}|${IMAGE_TAG}|g" \
+                  -e "s|\\${NAMESPACE}|${NAMESPACE}|g" \
+                  "$f" > "$out"
+            done
             
             # Renderizar SOLO manifiestos del entorno específico
             if [ -d "k8s/${ENVIRONMENT}" ]; then
@@ -166,18 +179,6 @@ pipeline {
       }
     }
 
-    stage('Deploy to Production') {
-      when {
-        allOf {
-          equals expected: 'production', actual: params.ENVIRONMENT
-          expression { !params.FORCE_DEPLOY }
-        }
-      }
-      steps {
-        input message: 'Deploy to production?', ok: 'Deploy'
-      }
-    }
-
     stage('Deploy to Production (Execute)') {
       when {
         equals expected: 'production', actual: params.ENVIRONMENT
@@ -197,6 +198,17 @@ pipeline {
               
               # Copiar base
               cp k8s/base/*.yaml k8s/_render-prod/
+
+              # Renderizar base para producción
+              find k8s/base -type f -name "*.yaml" \
+                -print | while read -r f; do
+                out="k8s/_render-prod/${f#k8s/base/}"
+                mkdir -p "$(dirname "$out")"
+                sed -e "s|\\${REGISTRY}|${REGISTRY}|g" \
+                    -e "s|\\${IMAGE_TAG}|${IMAGE_TAG}|g" \
+                    -e "s|\\${NAMESPACE}|${NAMESPACE}|g" \
+                    "$f" > "$out"
+              done
               
               # Renderizar para producción
               find k8s/production -type f -name "*.yaml" \
