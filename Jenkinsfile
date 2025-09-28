@@ -45,7 +45,7 @@ pipeline {
           
           // Validar sintaxis de manifiestos
           sh '''
-            find k8s/ -name "*.yaml" -exec kubectl --dry-run=client apply -f {} \;
+            find k8s/ -name "*.yaml" -exec kubectl --dry-run=client apply -f {} \\;
           '''
         }
       }
@@ -75,9 +75,9 @@ pipeline {
             find k8s/${ENVIRONMENT} -type f -name "*.yaml" -print | while read -r f; do
               out="k8s/_render/${f#k8s/${ENVIRONMENT}/}"
               mkdir -p "$(dirname "$out")"
-              sed -e "s|\\\${REGISTRY}|${REGISTRY}|g" \
-                  -e "s|\\\${IMAGE_TAG}|${IMAGE_TAG}|g" \
-                  -e "s|\\\${NAMESPACE}|${NAMESPACE}|g" \
+              sed -e "s|\\\${REGISTRY}|${REGISTRY}|g" \\
+                  -e "s|\\\${IMAGE_TAG}|${IMAGE_TAG}|g" \\
+                  -e "s|\\\${NAMESPACE}|${NAMESPACE}|g" \\
                   "$f" > "$out"
             done
             
@@ -190,9 +190,9 @@ pipeline {
               find k8s/production -type f -name "*.yaml" -print | while read -r f; do
                 out="k8s/_render-prod/${f#k8s/production/}"
                 mkdir -p "$(dirname "$out")"
-                sed -e "s|\\\${REGISTRY}|${REGISTRY}|g" \
-                    -e "s|\\\${IMAGE_TAG}|${IMAGE_TAG}|g" \
-                    -e "s|\\\${NAMESPACE}|${NAMESPACE}|g" \
+                sed -e "s|\\\${REGISTRY}|${REGISTRY}|g" \\
+                    -e "s|\\\${IMAGE_TAG}|${IMAGE_TAG}|g" \\
+                    -e "s|\\\${NAMESPACE}|${NAMESPACE}|g" \\
                     "$f" > "$out"
               done
               
