@@ -74,13 +74,13 @@ pipeline {
               export KUBECONFIG="$KCFG"
               export NAMESPACE="${K8S_NAMESPACE_STAGING}"
               
-              # Re-renderizar para producción
+              # Re-renderizar para staging
               rm -rf k8s/_render-staging && mkdir -p k8s/_render-staging
               
               # Copiar base
               cp k8s/base/*.yaml k8s/_render-staging/
 
-              # Renderizar base para producción
+              # Renderizar base para staging
               find k8s/base -type f -name "*.yaml" \
                 -print | while read -r f; do
                 out="k8s/_render-staging/${f#k8s/base/}"
@@ -91,18 +91,17 @@ pipeline {
                     "$f" > "$out"
               done
               
-              # Renderizar para producción
-              find k8s/production -type f -name "*.yaml" \
+              # Renderizar para staging
+              find k8s/staging -type f -name "*.yaml" \
                 -print | while read -r f; do
-                out="k8s/_render-staging/${f#k8s/production/}"
+                out="k8s/_render-staging/${f#k8s/staging/}"
                 mkdir -p "$(dirname "$out")"
                 sed -e "s|\\${REGISTRY}|${REGISTRY}|g" \
                     -e "s|\\${IMAGE_TAG}|${IMAGE_TAG}|g" \
-                    -e "s|\\${NAMESPACE}|${NAMESPACE}|g" \
                     "$f" > "$out"
               done
               
-              # Aplicar a producción
+              # Aplicar a staging
               kubectl apply -f k8s/_render-staging -R
               
               # Esperar rollouts
@@ -183,7 +182,6 @@ pipeline {
                 mkdir -p "$(dirname "$out")"
                 sed -e "s|\\${REGISTRY}|${REGISTRY}|g" \
                     -e "s|\\${IMAGE_TAG}|${IMAGE_TAG}|g" \
-                    -e "s|\\${NAMESPACE}|${NAMESPACE}|g" \
                     "$f" > "$out"
               done
               
