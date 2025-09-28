@@ -2,10 +2,10 @@ apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: auth-api
-  namespace: ${NAMESPACE}
+  namespace: microservices-prod
   labels:
     app: auth-api
-    environment: staging
+    environment: production
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
