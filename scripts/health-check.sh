@@ -59,7 +59,7 @@ check_endpoints() {
     fi
     
     # Verificar endpoints usando el comando directo
-    local endpoint_info=$(kubectl --kubeconfig="$KUBECONFIG" get endpoints $service -n $namespace --no-headers 2>/dev/null)
+    local endpoint_info=$(kubectl --kubeconfig="$KUBECONFIG" get endpoints $service -n $namespace --no-headers)
     
     echo "Endpoint info: $endpoint_info"
     
