@@ -58,10 +58,18 @@ check_endpoints() {
         return 1
     fi
     
-    # Verificar que el servicio tiene endpoints
-    local endpoints=$(kubectl --kubeconfig="$KUBECONFIG" get endpoints $service -n $namespace -o jsonpath='{.subsets[*].addresses[*].ip}' 2>/dev/null || echo "")
+    # Verificar endpoints usando el comando directo
+    local endpoint_info=$(kubectl --kubeconfig="$KUBECONFIG" get endpoints $service -n $namespace --no-headers 2>/dev/null)
     
-    if [ -z "$endpoints" ]; then
+    if [ -z "$endpoint_info" ]; then
+        echo "❌ Service $service has no endpoints"
+        return 1
+    fi
+    
+    # Extraer las IPs de los endpoints
+    local endpoints=$(echo "$endpoint_info" | awk '{print $2}' | tr ',' ' ')
+    
+    if [ -z "$endpoints" ] || [ "$endpoints" = "<none>" ]; then
         echo "❌ Service $service has no endpoints"
         return 1
     fi
