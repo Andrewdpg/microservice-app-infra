@@ -1,17 +1,18 @@
 #!/bin/bash
 
 # Health Check Script for Microservices
-# Usage: ./health-check.sh <namespace>
+# Usage: ./health-check.sh <kubeconfig> <namespace> [timeout]
 
 set -e
 
-KUBECONFIG=${1:-}
-NAMESPACE=${1:-microservices-staging}
-TIMEOUT=${2:-300}
+KUBECONFIG=${1:-}  # Primer parámetro: ruta al kubeconfig
+NAMESPACE=${2:-microservices-staging}  # Segundo parámetro: namespace
+TIMEOUT=${3:-300}  # Tercer parámetro: timeout
 INTERVAL=10
 
 echo "🔍 Performing health checks on namespace: $NAMESPACE"
 echo "⏱️  Timeout: ${TIMEOUT}s, Interval: ${INTERVAL}s"
+echo "🔧 Using kubeconfig: $KUBECONFIG"
 
 # Función para verificar si un deployment está listo
 check_deployment() {
@@ -33,7 +34,7 @@ check_deployment() {
     
     # Verificar que todos los pods están corriendo
     local ready_pods=$(kubectl --kubeconfig="$KUBECONFIG" get deployment $deployment -n $namespace -o jsonpath='{.status.readyReplicas}')
-    local desired_pods=$(kubectl get deployment $deployment -n $namespace -o jsonpath='{.spec.replicas}')
+    local desired_pods=$(kubectl --kubeconfig="$KUBECONFIG" get deployment $deployment -n $namespace -o jsonpath='{.spec.replicas}')
     
     if [ "$ready_pods" != "$desired_pods" ]; then
         echo "❌ Deployment $deployment: $ready_pods/$desired_pods pods ready"
@@ -98,7 +99,7 @@ fi
 echo "📋 Checking deployments..."
 for service in "${!DEPLOYMENTS[@]}"; do
     deployment="${DEPLOYMENTS[$service]}"
-    if ! check_deployment $deployment $NAMESPACE $KUBECONFIG; then
+    if ! check_deployment $deployment $NAMESPACE; then
         echo "❌ Health check failed for deployment: $deployment"
         exit 1
     fi
@@ -108,7 +109,7 @@ done
 echo "🌐 Checking services..."
 for service in "${!SERVICES[@]}"; do
     port="${SERVICES[$service]}"
-    if ! check_endpoints $service $NAMESPACE $port $KUBECONFIG; then
+    if ! check_endpoints $service $NAMESPACE $port; then
         echo "❌ Health check failed for service: $service"
         exit 1
     fi

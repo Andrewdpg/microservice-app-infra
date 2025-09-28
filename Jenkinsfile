@@ -136,10 +136,10 @@ pipeline {
               kubectl --kubeconfig="$KCFG" get pods -n ${K8S_NAMESPACE_STAGING}
 
 
-              
+
               # Health checks básicos
               if [ -f "./scripts/health-check.sh" ]; then
-                ./scripts/health-check.sh --kubeconfig="$KCFG" ${K8S_NAMESPACE_STAGING}
+                ./scripts/health-check.sh "$KCFG" "${K8S_NAMESPACE_STAGING}" 300
               else
                 echo "Health check script not found, skipping"
               fi
@@ -214,6 +214,9 @@ pipeline {
         withCredentials([file(credentialsId: "${KUBECONFIG_CREDENTIAL}", variable: 'KCFG')]) {
           script {
             echo "Performing health checks on production..."
+
+            sh 'chmod +x scripts/health-check.sh'
+
             sh '''
               export KUBECONFIG="$KCFG"
               
@@ -222,7 +225,7 @@ pipeline {
               
               # Health checks básicos
               if [ -f "./scripts/health-check.sh" ]; then
-                ./scripts/health-check.sh ${K8S_NAMESPACE_PROD}
+                ./scripts/health-check.sh "$KCFG" "${K8S_NAMESPACE_PROD}" 300
               else
                 echo "Health check script not found, skipping"
               fi
