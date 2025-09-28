@@ -1,25 +1,23 @@
 # scripts/gen-jenkins-config.ps1
 param(
     [string]$ClusterName = "ci",
-    [string]$Namespace = "micro",
+    [string]$Namespace = "microservices-staging",  # ← Cambiar default
     [string]$ServiceAccount = "jenkins-deployer",
     [string]$Output = "jenkins-kubeconfig.yaml",
-    [switch]$ConnectJenkinsToKindNet = $true,   # conecta el contenedor jenkins a la red 'kind'
-    [string]$JenkinsUrl = "http://localhost:8079"  # URL Jenkins
+    [switch]$ConnectJenkinsToKindNet = $true,
+    [string]$JenkinsUrl = "http://localhost:8079"
 )
 
 Write-Host "Generando kubeconfig para SA '$ServiceAccount' en ns '$Namespace'..." -ForegroundColor Yellow
 
-# 1) Asegurar namespace y RBAC
-if (Test-Path "infra/k8s/namespaces.yaml") {
-    kubectl apply -f infra/k8s/namespaces.yaml | Out-Null
+# 1) Asegurar namespaces y RBAC
+if (Test-Path "k8s/base/namespaces.yaml") {
+    kubectl apply -f k8s/base/namespaces.yaml | Out-Null
 }
 else {
     kubectl get ns $Namespace 2>$null 1>$null
     if ($LASTEXITCODE -ne 0) { kubectl create ns $Namespace | Out-Null }
 }
-
-kubectl apply -f infra/k8s/rbac-jenkins.yaml | Out-Null
 
 # 2) Esperar SA
 $retries = 20
@@ -35,10 +33,10 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
-# 3) Obtener token (K8s 1.24+ usa 'create token'; fallback a Secret si no)
+# 3) Obtener token
 $token = ""
 try {
-    $token = (kubectl -n $Namespace create token $ServiceAccount 2>$null).Trim()
+    $token = (kubectl -n $Namespace create token $ServiceAccount --duration=8760h 2>$null).Trim()
 }
 catch { }
 
@@ -54,12 +52,12 @@ if (-not $token) {
     exit 1
 }
 
-# 4) CA y server desde kubeconfig de kind (CA ya base64)
+# 4) CA y server desde kubeconfig de kind
 $kindCfg = kind get kubeconfig --name $ClusterName
 $caData = ($kindCfg | Select-String -Pattern 'certificate-authority-data:\s*(\S+)' -AllMatches).Matches[0].Groups[1].Value
 $kindSrv = ($kindCfg | Select-String -Pattern 'server:\s*(\S+)' -AllMatches).Matches[0].Groups[1].Value
 
-# 5) Server a usar (si conectas Jenkins a red 'kind', usa DNS interno; si no, usa $kindSrv)
+# 5) Server a usar
 $server = "https://$ClusterName-control-plane:6443"
 
 # 6) Construir kubeconfig
@@ -87,7 +85,7 @@ users:
 $kcfg | Out-File -FilePath $Output -Encoding UTF8
 Write-Host "Kubeconfig generado: $Output" -ForegroundColor Green
 
-# 7) (Opcional) Conectar contenedor Jenkins a la red 'kind'
+# 7) Conectar contenedor Jenkins a la red 'kind'
 if ($ConnectJenkinsToKindNet) {
     $jenkins = (docker ps --filter "name=jenkins" --format "{{.Names}}")
     if ($jenkins) {

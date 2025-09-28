@@ -1,6 +1,6 @@
 param(
   [string]$ClusterName = "ci",
-  [string]$Namespace = "micro",
+  [string]$Namespace = "microservices-staging",
   [switch]$ConnectJenkinsToKindNet
 )
 

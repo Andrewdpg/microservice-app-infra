@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: micro-config
-  namespace: micro
+  namespace: ${NAMESPACE}
 data:
   # Puertos internos de cada servicio (estandarizados)
   AUTH_API_PORT: "8081"
@@ -11,17 +11,17 @@ data:
   FRONTEND_PORT: "8080"
 
   # URLs de servicios internos (Kubernetes service DNS)
-  USERS_API_URL: "http://users-api.micro.svc.cluster.local:8083"
-  AUTH_API_URL: "http://auth-api.micro.svc.cluster.local:8081"
-  TODOS_API_URL: "http://todos-api.micro.svc.cluster.local:8082"
+  USERS_API_URL: "http://users-api.${NAMESPACE}.svc.cluster.local:8083"
+  AUTH_API_URL: "http://auth-api.${NAMESPACE}.svc.cluster.local:8081"
+  TODOS_API_URL: "http://todos-api.${NAMESPACE}.svc.cluster.local:8082"
 
   # Redis - Cola de mensajes
-  REDIS_QUEUE_HOST: "redis-queue.micro.svc.cluster.local"
+  REDIS_QUEUE_HOST: "redis-queue.${NAMESPACE}.svc.cluster.local"
   REDIS_QUEUE_PORT: "6379"
   REDIS_QUEUE_CHANNEL: "log_channel"
 
   # Redis - Cache
-  REDIS_CACHE_HOST: "redis-cache.micro.svc.cluster.local"
+  REDIS_CACHE_HOST: "redis-cache.${NAMESPACE}.svc.cluster.local"
   REDIS_CACHE_PORT: "6379"
 
   # Observabilidad
