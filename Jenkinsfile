@@ -47,7 +47,7 @@ pipeline {
             // Validar sintaxis de manifiestos (solo si kubectl está disponible)
             sh '''
               if command -v kubectl >/dev/null 2>&1; then
-                find k8s/ -name "*.yaml" -exec kubectl --kubeconfig="$KCFG" --dry-run=client apply -f {} \;
+                find k8s/ -name "*.yaml" -exec kubectl --kubeconfig="$KCFG" --dry-run=client apply -f {} \\;
               else
                 echo "kubectl not available, skipping validation"
               fi
