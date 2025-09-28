@@ -162,7 +162,7 @@ pipeline {
       when {
         allOf {
           equals expected: 'production', actual: params.ENVIRONMENT
-          not { params.FORCE_DEPLOY }
+          expression { !params.FORCE_DEPLOY }
         }
       }
       steps {
