@@ -61,6 +61,8 @@ check_endpoints() {
     # Verificar endpoints usando el comando directo
     local endpoint_info=$(kubectl --kubeconfig="$KUBECONFIG" get endpoints $service -n $namespace --no-headers 2>/dev/null)
     
+    echo "Endpoint info: $endpoint_info"
+    
     if [ -z "$endpoint_info" ]; then
         echo "❌ Service $service has no endpoints"
         return 1
