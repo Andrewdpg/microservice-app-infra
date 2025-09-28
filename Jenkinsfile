@@ -259,12 +259,6 @@ pipeline {
   }
 
   post {
-    always {
-      // Limpiar archivos temporales
-      sh '''
-        rm -rf k8s/_render k8s/_render-prod
-      '''
-    }
     
     success {
       echo "Deployment to ${params.ENVIRONMENT} completed successfully"
