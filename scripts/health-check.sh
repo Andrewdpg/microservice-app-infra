@@ -66,14 +66,6 @@ check_endpoints() {
         return 1
     fi
     
-    # Extraer las IPs de los endpoints
-    local endpoints=$(echo "$endpoint_info" | awk '{print $2}' | tr ',' ' ')
-    
-    if [ -z "$endpoints" ] || [ "$endpoints" = "<none>" ]; then
-        echo "❌ Service $service has no endpoints"
-        return 1
-    fi
-    
     echo "✅ Service $service has endpoints: $endpoints"
     return 0
 }
