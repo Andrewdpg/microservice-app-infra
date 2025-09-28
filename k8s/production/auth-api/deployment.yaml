@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: auth-api
-  namespace: ${NAMESPACE}
+  namespace: microservices-prod
   labels:
     app: auth-api
     environment: production

@@ -12,7 +12,7 @@ metadata:
   namespace: microservices-staging  # ← Para staging
 rules:
 - apiGroups: [""]  # Core API
-  resources: ["configmaps","secrets","services","pods"]
+  resources: ["configmaps","secrets","services","pods","endpoints"]
   verbs: ["get","list","watch","create","update","patch","delete"]
 - apiGroups: ["apps"]
   resources: ["deployments","replicasets","statefulsets","daemonsets"]
@@ -47,7 +47,7 @@ metadata:
   namespace: microservices-prod
 rules:
 - apiGroups: [""]
-  resources: ["configmaps","secrets","services","pods"]
+  resources: ["configmaps","secrets","services","pods","endpoints"]
   verbs: ["get","list","watch","create","update","patch","delete"]
 - apiGroups: ["apps"]
   resources: ["deployments","replicasets","statefulsets","daemonsets"]
