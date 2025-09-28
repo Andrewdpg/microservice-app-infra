@@ -45,7 +45,7 @@ pipeline {
           
           // Validar sintaxis de manifiestos
           sh '''
-            find k8s/ -name "*.yaml" -exec kubectl --dry-run=client apply -f {} \\;
+            find k8s/ -name "*.yaml" -exec kubectl --dry-run=client apply -f {} \;
           '''
         }
       }
@@ -75,9 +75,9 @@ pipeline {
             find k8s/${ENVIRONMENT} -type f -name "*.yaml" -print | while read -r f; do
               out="k8s/_render/${f#k8s/${ENVIRONMENT}/}"
               mkdir -p "$(dirname "$out")"
-              sed -e "s|\\\${REGISTRY}|${REGISTRY}|g" \\
-                  -e "s|\\\${IMAGE_TAG}|${IMAGE_TAG}|g" \\
-                  -e "s|\\\${NAMESPACE}|${NAMESPACE}|g" \\
+              sed -e "s|\\\${REGISTRY}|${REGISTRY}|g" \
+                  -e "s|\\\${IMAGE_TAG}|${IMAGE_TAG}|g" \
+                  -e "s|\\\${NAMESPACE}|${NAMESPACE}|g" \
                   "$f" > "$out"
             done
             
@@ -91,8 +91,8 @@ pipeline {
     stage('Deploy to Staging') {
       when {
         anyOf {
-          params.ENVIRONMENT == 'staging'
-          params.ENVIRONMENT == 'production'  // Siempre deploy a staging primero
+          equals expected: 'staging', actual: params.ENVIRONMENT
+          equals expected: 'production', actual: params.ENVIRONMENT  // Siempre deploy a staging primero
         }
       }
       steps {
@@ -135,8 +135,8 @@ pipeline {
     stage('Health Check Staging') {
       when {
         anyOf {
-          params.ENVIRONMENT == 'staging'
-          params.ENVIRONMENT == 'production'
+          equals expected: 'staging', actual: params.ENVIRONMENT
+          equals expected: 'production', actual: params.ENVIRONMENT
         }
       }
       steps {
@@ -161,7 +161,7 @@ pipeline {
     stage('Deploy to Production') {
       when {
         allOf {
-          params.ENVIRONMENT == 'production'
+          equals expected: 'production', actual: params.ENVIRONMENT
           not { params.FORCE_DEPLOY }
         }
       }
@@ -172,7 +172,7 @@ pipeline {
 
     stage('Deploy to Production (Execute)') {
       when {
-        params.ENVIRONMENT == 'production'
+        equals expected: 'production', actual: params.ENVIRONMENT
       }
       steps {
         unstash 'infra-ws'
@@ -190,9 +190,9 @@ pipeline {
               find k8s/production -type f -name "*.yaml" -print | while read -r f; do
                 out="k8s/_render-prod/${f#k8s/production/}"
                 mkdir -p "$(dirname "$out")"
-                sed -e "s|\\\${REGISTRY}|${REGISTRY}|g" \\
-                    -e "s|\\\${IMAGE_TAG}|${IMAGE_TAG}|g" \\
-                    -e "s|\\\${NAMESPACE}|${NAMESPACE}|g" \\
+                sed -e "s|\\\${REGISTRY}|${REGISTRY}|g" \
+                    -e "s|\\\${IMAGE_TAG}|${IMAGE_TAG}|g" \
+                    -e "s|\\\${NAMESPACE}|${NAMESPACE}|g" \
                     "$f" > "$out"
               done
               
@@ -213,7 +213,7 @@ pipeline {
 
     stage('Health Check Production') {
       when {
-        params.ENVIRONMENT == 'production'
+        equals expected: 'production', actual: params.ENVIRONMENT
       }
       steps {
         unstash 'infra-ws'
