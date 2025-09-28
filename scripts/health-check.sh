@@ -75,16 +75,16 @@ declare -A SERVICES=(
     ["auth-api"]="8081"
     ["users-api"]="8083"
     ["todos-api"]="8082"
-    ["frontend"]="8080"
-    ["log-processor"]="8080"
+    ["web-frontend"]="8080"
+    ["log-message-processor"]="8080"
 )
 
 declare -A DEPLOYMENTS=(
     ["auth-api"]="auth-api"
     ["users-api"]="users-api"
     ["todos-api"]="todos-api"
-    ["frontend"]="frontend"
-    ["log-processor"]="log-processor"
+    ["web-frontend"]="web-frontend"
+    ["log-message-processor"]="log-message-processor"
 )
 
 echo "🚀 Starting health checks..."
