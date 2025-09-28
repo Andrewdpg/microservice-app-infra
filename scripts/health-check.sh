@@ -5,6 +5,7 @@
 
 set -e
 
+KUBECONFIG=${1:-}
 NAMESPACE=${1:-microservices-staging}
 TIMEOUT=${2:-300}
 INTERVAL=10
@@ -19,19 +20,19 @@ check_deployment() {
     
     echo "Checking deployment: $deployment"
     
-    if ! kubectl get deployment $deployment -n $namespace >/dev/null 2>&1; then
+    if ! kubectl --kubeconfig="$KUBECONFIG" get deployment $deployment -n $namespace >/dev/null 2>&1; then
         echo "❌ Deployment $deployment not found in namespace $namespace"
         return 1
     fi
     
     # Verificar que el deployment está listo
-    if ! kubectl rollout status deployment/$deployment -n $namespace --timeout=${TIMEOUT}s; then
+    if ! kubectl --kubeconfig="$KUBECONFIG" rollout status deployment/$deployment -n $namespace --timeout=${TIMEOUT}s; then
         echo "❌ Deployment $deployment is not ready"
         return 1
     fi
     
     # Verificar que todos los pods están corriendo
-    local ready_pods=$(kubectl get deployment $deployment -n $namespace -o jsonpath='{.status.readyReplicas}')
+    local ready_pods=$(kubectl --kubeconfig="$KUBECONFIG" get deployment $deployment -n $namespace -o jsonpath='{.status.readyReplicas}')
     local desired_pods=$(kubectl get deployment $deployment -n $namespace -o jsonpath='{.spec.replicas}')
     
     if [ "$ready_pods" != "$desired_pods" ]; then
@@ -51,13 +52,13 @@ check_endpoints() {
     
     echo "Checking service endpoints: $service"
     
-    if ! kubectl get service $service -n $namespace >/dev/null 2>&1; then
+    if ! kubectl --kubeconfig="$KUBECONFIG" get service $service -n $namespace >/dev/null 2>&1; then
         echo "❌ Service $service not found in namespace $namespace"
         return 1
     fi
     
     # Verificar que el servicio tiene endpoints
-    local endpoints=$(kubectl get endpoints $service -n $namespace -o jsonpath='{.subsets[*].addresses[*].ip}' 2>/dev/null || echo "")
+    local endpoints=$(kubectl --kubeconfig="$KUBECONFIG" get endpoints $service -n $namespace -o jsonpath='{.subsets[*].addresses[*].ip}' 2>/dev/null || echo "")
     
     if [ -z "$endpoints" ]; then
         echo "❌ Service $service has no endpoints"
@@ -88,7 +89,7 @@ declare -A DEPLOYMENTS=(
 echo "🚀 Starting health checks..."
 
 # Verificar que el namespace existe
-if ! kubectl get namespace $NAMESPACE >/dev/null 2>&1; then
+if ! kubectl --kubeconfig="$KUBECONFIG" get namespace $NAMESPACE >/dev/null 2>&1; then
     echo "❌ Namespace $NAMESPACE not found"
     exit 1
 fi
@@ -97,7 +98,7 @@ fi
 echo "📋 Checking deployments..."
 for service in "${!DEPLOYMENTS[@]}"; do
     deployment="${DEPLOYMENTS[$service]}"
-    if ! check_deployment $deployment $NAMESPACE; then
+    if ! check_deployment $deployment $NAMESPACE $KUBECONFIG; then
         echo "❌ Health check failed for deployment: $deployment"
         exit 1
     fi
@@ -107,7 +108,7 @@ done
 echo "🌐 Checking services..."
 for service in "${!SERVICES[@]}"; do
     port="${SERVICES[$service]}"
-    if ! check_endpoints $service $NAMESPACE $port; then
+    if ! check_endpoints $service $NAMESPACE $port $KUBECONFIG; then
         echo "❌ Health check failed for service: $service"
         exit 1
     fi
@@ -115,11 +116,11 @@ done
 
 # Verificar recursos del cluster
 echo "📊 Checking cluster resources..."
-kubectl top pods -n $NAMESPACE 2>/dev/null || echo "⚠️  Metrics not available"
+kubectl --kubeconfig="$KUBECONFIG" top pods -n $NAMESPACE 2>/dev/null || echo "⚠️  Metrics not available"
 
 # Verificar eventos recientes
 echo "📝 Recent events:"
-kubectl get events -n $NAMESPACE --sort-by='.lastTimestamp' | tail -10
+kubectl --kubeconfig="$KUBECONFIG" get events -n $NAMESPACE --sort-by='.lastTimestamp' | tail -10
 
 echo "✅ All health checks passed for namespace: $NAMESPACE"
 echo "🎉 Deployment is healthy and ready!"

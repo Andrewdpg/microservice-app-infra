@@ -46,10 +46,8 @@ pipeline {
           
             // Validar sintaxis de manifiestos (solo si kubectl está disponible)
             sh '''
-              export KUBECONFIG="$KCFG"
-
               if command -v kubectl >/dev/null 2>&1; then
-                find k8s/ -name "*.yaml" -exec kubectl --dry-run=client apply -f {} \\;
+                find k8s/ -name "*.yaml" -exec kubectl --kubeconfig="$KCFG" --dry-run=client apply -f {} \;
               else
                 echo "kubectl not available, skipping validation"
               fi
@@ -124,27 +122,23 @@ pipeline {
             echo "Deploying to staging environment..."
             sh '''
               set -e
-              export KUBECONFIG="$KCFG"
-              
-              # Verificar que kubectl funciona
-              kubectl version --client
-              
+
               # Aplicar namespaces primero
-              kubectl apply -f k8s/_render/namespaces.yaml
-              
+              kubectl --kubeconfig="$KCFG" apply -f k8s/_render/namespaces.yaml
+
               # Aplicar configuración
-              kubectl apply -f k8s/_render/configmap.yaml
-              kubectl apply -f k8s/_render/secret.yaml
-              
+              kubectl --kubeconfig="$KCFG" apply -f k8s/_render/configmap.yaml
+              kubectl --kubeconfig="$KCFG" apply -f k8s/_render/secret.yaml
+
               # Aplicar todos los manifiestos del entorno
-              kubectl apply -f k8s/_render -R
-              
+              kubectl --kubeconfig="$KCFG" apply -f k8s/_render -R
+
               # Esperar a que los deployments estén listos
-              kubectl rollout status deployment/auth-api -n ${K8S_NAMESPACE_STAGING} --timeout=300s
-              kubectl rollout status deployment/users-api -n ${K8S_NAMESPACE_STAGING} --timeout=300s
-              kubectl rollout status deployment/todos-api -n ${K8S_NAMESPACE_STAGING} --timeout=300s
-              kubectl rollout status deployment/frontend -n ${K8S_NAMESPACE_STAGING} --timeout=300s
-              kubectl rollout status deployment/log-processor -n ${K8S_NAMESPACE_STAGING} --timeout=300s
+              kubectl --kubeconfig="$KCFG" rollout status deployment/auth-api -n ${K8S_NAMESPACE_STAGING} --timeout=300s
+              kubectl --kubeconfig="$KCFG" rollout status deployment/users-api -n ${K8S_NAMESPACE_STAGING} --timeout=300s
+              kubectl --kubeconfig="$KCFG" rollout status deployment/todos-api -n ${K8S_NAMESPACE_STAGING} --timeout=300s
+              kubectl --kubeconfig="$KCFG" rollout status deployment/frontend -n ${K8S_NAMESPACE_STAGING} --timeout=300s
+              kubectl --kubeconfig="$KCFG" rollout status deployment/log-processor -n ${K8S_NAMESPACE_STAGING} --timeout=300s
             '''
           }
         }
@@ -164,14 +158,12 @@ pipeline {
           script {
             echo "Performing health checks on staging..."
             sh '''
-              export KUBECONFIG="$KCFG"
-              
               # Verificar que todos los pods están corriendo
-              kubectl get pods -n ${K8S_NAMESPACE_STAGING}
+              kubectl --kubeconfig="$KCFG" get pods -n ${K8S_NAMESPACE_STAGING}
               
               # Health checks básicos
               if [ -f "./scripts/health-check.sh" ]; then
-                ./scripts/health-check.sh ${K8S_NAMESPACE_STAGING}
+                ./scripts/health-check.sh --kubeconfig="$KCFG" ${K8S_NAMESPACE_STAGING}
               else
                 echo "Health check script not found, skipping"
               fi
