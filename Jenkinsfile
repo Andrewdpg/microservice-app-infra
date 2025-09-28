@@ -57,57 +57,6 @@ pipeline {
       }
     }
 
-    stage('Prepare Deployment') {
-      steps {
-        unstash 'infra-ws'
-        script {
-          // Crear directorio temporal para renderizar manifiestos
-          sh '''
-            rm -rf k8s/_render && mkdir -p k8s/_render
-            
-            # Renderizar manifiestos con variables de entorno
-            export REGISTRY="${REGISTRY}"
-            export IMAGE_TAG="${IMAGE_TAG}"
-            export NAMESPACE="${K8S_NAMESPACE_STAGING}"
-            
-            if [ "${ENVIRONMENT}" = "production" ]; then
-              export NAMESPACE="${K8S_NAMESPACE_PROD}"
-            fi
-            
-            # Copiar y renderizar manifiestos base
-            cp k8s/base/*.yaml k8s/_render/
-
-            # Renderizar manifiestos base con variables expandidas
-            find k8s/base -type f -name "*.yaml" \
-              -print | while read -r f; do
-              out="k8s/_render/${f#k8s/base/}"
-              mkdir -p "$(dirname "$out")"
-              sed -e "s|\\${REGISTRY}|${REGISTRY}|g" \
-                  -e "s|\\${IMAGE_TAG}|${IMAGE_TAG}|g" \
-                  -e "s|\\${NAMESPACE}|${NAMESPACE}|g" \
-                  "$f" > "$out"
-            done
-            
-            # Renderizar SOLO manifiestos del entorno específico
-            if [ -d "k8s/${ENVIRONMENT}" ]; then
-              find k8s/${ENVIRONMENT} -type f -name "*.yaml" \
-                -print | while read -r f; do
-                out="k8s/_render/${f#k8s/${ENVIRONMENT}/}"
-                mkdir -p "$(dirname "$out")"
-                sed -e "s|\\${REGISTRY}|${REGISTRY}|g" \
-                    -e "s|\\${IMAGE_TAG}|${IMAGE_TAG}|g" \
-                    -e "s|\\${NAMESPACE}|${NAMESPACE}|g" \
-                    "$f" > "$out"
-              done
-            fi
-            
-            echo "Rendered files for ${ENVIRONMENT}:"
-            find k8s/_render -type f -print
-          '''
-        }
-      }
-    }
-
     stage('Deploy to Staging') {
       when {
         anyOf {
@@ -119,26 +68,49 @@ pipeline {
         unstash 'infra-ws'
         withCredentials([file(credentialsId: "${KUBECONFIG_CREDENTIAL}", variable: 'KCFG')]) {
           script {
-            echo "Deploying to staging environment..."
+            echo "Deploying to production environment..."
             sh '''
               set -e
+              export KUBECONFIG="$KCFG"
+              export NAMESPACE="${K8S_NAMESPACE_STAGING}"
+              
+              # Re-renderizar para producción
+              rm -rf k8s/_render-staging && mkdir -p k8s/_render-staging
+              
+              # Copiar base
+              cp k8s/base/*.yaml k8s/_render-staging/
 
-              # Aplicar namespaces primero
-              kubectl --kubeconfig="$KCFG" apply -f k8s/_render/namespaces.yaml
-
-              # Aplicar configuración
-              kubectl --kubeconfig="$KCFG" apply -f k8s/_render/configmap.yaml
-              kubectl --kubeconfig="$KCFG" apply -f k8s/_render/secret.yaml
-
-              # Aplicar todos los manifiestos del entorno
-              kubectl --kubeconfig="$KCFG" apply -f k8s/_render -R
-
-              # Esperar a que los deployments estén listos
-              kubectl --kubeconfig="$KCFG" rollout status deployment/auth-api -n ${K8S_NAMESPACE_STAGING} --timeout=300s
-              kubectl --kubeconfig="$KCFG" rollout status deployment/users-api -n ${K8S_NAMESPACE_STAGING} --timeout=300s
-              kubectl --kubeconfig="$KCFG" rollout status deployment/todos-api -n ${K8S_NAMESPACE_STAGING} --timeout=300s
-              kubectl --kubeconfig="$KCFG" rollout status deployment/frontend -n ${K8S_NAMESPACE_STAGING} --timeout=300s
-              kubectl --kubeconfig="$KCFG" rollout status deployment/log-processor -n ${K8S_NAMESPACE_STAGING} --timeout=300s
+              # Renderizar base para producción
+              find k8s/base -type f -name "*.yaml" \
+                -print | while read -r f; do
+                out="k8s/_render-staging/${f#k8s/base/}"
+                mkdir -p "$(dirname "$out")"
+                sed -e "s|\\${REGISTRY}|${REGISTRY}|g" \
+                    -e "s|\\${IMAGE_TAG}|${IMAGE_TAG}|g" \
+                    -e "s|\\${NAMESPACE}|${NAMESPACE}|g" \
+                    "$f" > "$out"
+              done
+              
+              # Renderizar para producción
+              find k8s/production -type f -name "*.yaml" \
+                -print | while read -r f; do
+                out="k8s/_render-staging/${f#k8s/production/}"
+                mkdir -p "$(dirname "$out")"
+                sed -e "s|\\${REGISTRY}|${REGISTRY}|g" \
+                    -e "s|\\${IMAGE_TAG}|${IMAGE_TAG}|g" \
+                    -e "s|\\${NAMESPACE}|${NAMESPACE}|g" \
+                    "$f" > "$out"
+              done
+              
+              # Aplicar a producción
+              kubectl apply -f k8s/_render-staging -R
+              
+              # Esperar rollouts
+              kubectl rollout status deployment/auth-api -n ${K8S_NAMESPACE_STAGING} --timeout=600s
+              kubectl rollout status deployment/users-api -n ${K8S_NAMESPACE_STAGING} --timeout=600s
+              kubectl rollout status deployment/todos-api -n ${K8S_NAMESPACE_STAGING} --timeout=600s
+              kubectl rollout status deployment/frontend -n ${K8S_NAMESPACE_STAGING} --timeout=600s
+              kubectl rollout status deployment/log-processor -n ${K8S_NAMESPACE_STAGING} --timeout=600s
             '''
           }
         }
@@ -173,7 +145,7 @@ pipeline {
       }
     }
 
-    stage('Deploy to Production (Execute)') {
+    stage('Deploy to Production') {
       when {
         equals expected: 'production', actual: params.ENVIRONMENT
       }
