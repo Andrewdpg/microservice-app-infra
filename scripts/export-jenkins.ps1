@@ -45,10 +45,6 @@ docker cp jenkins:/var/jenkins_home/config.xml $configDir\
 Write-Host "Exportando usuarios..." -ForegroundColor Yellow
 docker cp jenkins:/var/jenkins_home/users $configDir\
 
-# Exportar plugins
-Write-Host "Exportando plugins..." -ForegroundColor Yellow
-docker cp jenkins:/var/jenkins_home/plugins $configDir\
-
 # Exportar claves de encriptacion
 Write-Host "Exportando claves de encriptacion..." -ForegroundColor Yellow
 docker cp jenkins:/var/jenkins_home/secrets $configDir\
@@ -220,11 +216,7 @@ Extract-CredentialsAndCreatePlaceholders -CredentialsFile "$configDir\credential
 Write-Host "Creando .gitignore..." -ForegroundColor Yellow
 $gitignoreContent = @"
 # Jenkins Configuration - NO SUBIR A REPOSITORIO
-jenkins-config/
 *.env
-secrets/
-credentials.xml
-users/
 "@
 $gitignoreContent | Out-File -FilePath "$configDir\.gitignore" -Encoding UTF8
 
