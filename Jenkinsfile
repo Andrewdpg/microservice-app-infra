@@ -4,7 +4,7 @@ pipeline {
   environment {
     K8S_NAMESPACE_STAGING = 'microservices-staging'
     K8S_NAMESPACE_PROD = 'microservices-prod'
-    KUBECONFIG_CREDENTIAL = 'jenkins-kubeconfig'
+    KUBECONFIG_CREDENTIAL = 'kubeconfig'
   }
 
   options {
