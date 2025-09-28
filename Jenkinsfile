@@ -46,6 +46,8 @@ pipeline {
           
             // Validar sintaxis de manifiestos (solo si kubectl está disponible)
             sh '''
+              export KUBECONFIG="$KCFG"
+
               if command -v kubectl >/dev/null 2>&1; then
                 find k8s/ -name "*.yaml" -exec kubectl --dry-run=client apply -f {} \\;
               else
