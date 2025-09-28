@@ -108,7 +108,7 @@ pipeline {
               kubectl rollout status deployment/auth-api -n ${K8S_NAMESPACE_STAGING} --timeout=600s
               kubectl rollout status deployment/users-api -n ${K8S_NAMESPACE_STAGING} --timeout=600s
               kubectl rollout status deployment/todos-api -n ${K8S_NAMESPACE_STAGING} --timeout=600s
-              kubectl rollout status deployment/frontend -n ${K8S_NAMESPACE_STAGING} --timeout=600s
+              kubectl rollout status deployment/web-frontend -n ${K8S_NAMESPACE_STAGING} --timeout=600s
               kubectl rollout status deployment/log-processor -n ${K8S_NAMESPACE_STAGING} --timeout=600s
             '''
           }
@@ -192,7 +192,7 @@ pipeline {
               kubectl rollout status deployment/auth-api -n ${K8S_NAMESPACE_PROD} --timeout=600s
               kubectl rollout status deployment/users-api -n ${K8S_NAMESPACE_PROD} --timeout=600s
               kubectl rollout status deployment/todos-api -n ${K8S_NAMESPACE_PROD} --timeout=600s
-              kubectl rollout status deployment/frontend -n ${K8S_NAMESPACE_PROD} --timeout=600s
+              kubectl rollout status deployment/web-frontend -n ${K8S_NAMESPACE_PROD} --timeout=600s
               kubectl rollout status deployment/log-processor -n ${K8S_NAMESPACE_PROD} --timeout=600s
             '''
           }
