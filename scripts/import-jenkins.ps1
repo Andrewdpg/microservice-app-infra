@@ -158,10 +158,6 @@ docker cp $configDir/users jenkins:/var/jenkins_home/
 Write-Host "Importando jobs..." -ForegroundColor Yellow
 docker cp $configDir/jobs jenkins:/var/jenkins_home/
 
-# Importar plugins
-Write-Host "Importando plugins..." -ForegroundColor Yellow
-docker cp $configDir/plugins jenkins:/var/jenkins_home/
-
 # Crear archivo temporal de credenciales con reemplazos
 Write-Host "Creando archivo temporal de credenciales con reemplazos..." -ForegroundColor Yellow
 $envFile = "$configDir\.env"

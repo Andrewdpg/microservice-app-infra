@@ -22,10 +22,36 @@ RUN usermod -aG docker jenkins
 # Volver al usuario jenkins
 USER jenkins
 
-# Instalar plugins
+# Instalar solo plugins esenciales que existen
 RUN jenkins-plugin-cli --plugins \
     kubernetes \
     workflow-aggregator \
     git \
     credentials-binding \
-    docker-workflow
+    docker-workflow \
+    blueocean \
+    github \
+    github-branch-source \
+    timestamper \
+    build-timeout \
+    htmlpublisher \
+    gradle \
+    junit \
+    mailer \
+    ldap \
+    matrix-auth \
+    matrix-project \
+    ant \
+    ssh-credentials \
+    ssh-slaves \
+    plain-credentials \
+    token-macro \
+    favorite \
+    display-url-api \
+    checks-api \
+    cloud-stats \
+    metrics \
+    variant \
+    structs \
+    script-security \
+    durable-task
